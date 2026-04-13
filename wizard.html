@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>QManager Setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --radius:0.65rem;
+  --background:oklch(0.141 0.005 285.823);
+  --foreground:oklch(0.985 0 0);
+  --card:oklch(0.21 0.006 285.885);
+  --card-foreground:oklch(0.985 0 0);
+  --primary:oklch(0.488 0.243 264.376);
+  --primary-foreground:oklch(0.97 0.014 254.604);
+  --secondary:oklch(0.274 0.006 286.033);
+  --secondary-foreground:oklch(0.985 0 0);
+  --muted:oklch(0.274 0.006 286.033);
+  --muted-foreground:oklch(0.705 0 0);
+  --accent:oklch(0.274 0.006 286.033);
+  --border:oklch(1 0 0 / 10%);
+  --input:oklch(1 0 0 / 15%);
+  --ring:oklch(0.556 0.215 262.749);
+  --success:oklch(0.59 0.18 149);
+  --warning:oklch(0.75 0.18 75);
+  --destructive:oklch(0.577 0.245 27.325);
+}
+body{
+  font-family:'Manrope',system-ui,sans-serif;
+  background:var(--background);
+  color:var(--foreground);
+  min-height:100svh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Main card */
+.wizard-card{
+  width:100%;
+  max-width:440px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:calc(var(--radius) + 4px);
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.5);
+  ring:1px solid oklch(1 0 0 / 5%);
+  overflow:hidden;
+}
+.card-inner{padding:2rem 1.5rem}
+
+/* Header / branding */
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:1.5rem;
+}
+.brand-icon{
+  width:40px;height:40px;
+  border-radius:var(--radius);
+  background:oklch(0.488 0.243 264.376 / 15%);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--primary);
+  font-size:18px;font-weight:700;
+}
+.brand h1{font-size:17px;font-weight:600;letter-spacing:-0.01em}
+.brand .sub{font-size:12px;color:var(--muted-foreground);margin-top:1px}
+
+/* Progress dots */
+.progress-dots{
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  padding:12px 0 20px;
+}
+.progress-dots .dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--border);
+  transition:all .3s ease;
+}
+.progress-dots .dot.done{background:var(--primary)}
+.progress-dots .dot.active{background:var(--primary);transform:scale(1.3)}
+
+/* Connection indicator */
+.conn-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;margin-bottom:16px;
+  border-radius:var(--radius);
+  background:oklch(1 0 0 / 5%);
+  font-size:12px;color:var(--muted-foreground);
+}
+.conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.conn-dot.off{background:var(--destructive)}
+.conn-dot.on{background:var(--success)}
+.conn-dot.wait{background:var(--warning);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* Step panels */
+.step-panel{display:none;animation:fadeUp .3s ease}
+.step-panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.step-panel h2{font-size:18px;font-weight:600;margin-bottom:4px;letter-spacing:-0.01em}
+.step-panel .desc{font-size:13px;color:var(--muted-foreground);margin-bottom:20px;line-height:1.5}
+
+/* Form fields */
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-size:12px;font-weight:500;
+  color:var(--muted-foreground);margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.field input,.field select{
+  width:100%;padding:10px 12px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:var(--input);
+  color:var(--foreground);
+  font-size:14px;font-family:inherit;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.field input:focus,.field select:focus{
+  border-color:var(--ring);
+  box-shadow:0 0 0 2px oklch(0.488 0.243 264.376 / 20%);
+}
+.field select{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+.field .current{font-size:11px;color:var(--primary);margin-top:5px}
+.field .hint{font-size:11px;color:var(--muted-foreground);margin-top:4px}
+
+/* Selectable option cards */
+.option-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.option-card{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:transparent;
+  cursor:pointer;
+  transition:all .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.option-card:hover{border-color:oklch(0.488 0.243 264.376 / 50%);background:oklch(0.488 0.243 264.376 / 5%)}
+.option-card:active{transform:scale(0.97)}
+.option-card.selected{
+  border-color:var(--primary);
+  background:oklch(0.488 0.243 264.376 / 10%);
+  box-shadow:0 0 0 1px var(--primary);
+}
+.option-card .radio{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+}
+.option-card.selected .radio{border-color:var(--primary)}
+.option-card.selected .radio::after{
+  content:'';width:8px;height:8px;border-radius:50%;
+  background:var(--primary);
+}
+.option-card .opt-text{flex:1}
+.option-card .opt-label{font-size:14px;font-weight:500}
+.option-card .opt-desc{font-size:11px;color:var(--muted-foreground);margin-top:1px}
+
+/* Status grid */
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.stat{
+  padding:10px 12px;border-radius:var(--radius);
+  background:oklch(1 0 0 / 5%);border:1px solid var(--border);
+}
+.stat .label{font-size:10px;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.stat .value{font-size:13px;margin-top:3px;word-break:break-all}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px;margin-top:20px}
+.btn{
+  flex:1;padding:10px 16px;
+  border-radius:var(--radius);
+  border:1px solid transparent;
+  font-size:14px;font-weight:500;font-family:inherit;
+  cursor:pointer;transition:all .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(0.97)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.primary{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.1)}
+.btn.secondary{background:var(--secondary);color:var(--secondary-foreground);border-color:var(--border)}
+.btn.secondary:hover:not(:disabled){background:oklch(0.32 0.006 286)}
+.btn.ghost{background:transparent;color:var(--muted-foreground);border-color:transparent}
+.btn.ghost:hover:not(:disabled){background:oklch(1 0 0 / 5%)}
+
+/* Connect screen */
+.connect-center{text-align:center;padding:24px 0 8px}
+.connect-center .icon-wrap{
+  width:64px;height:64px;margin:0 auto 16px;
+  border-radius:16px;
+  background:oklch(0.488 0.243 264.376 / 12%);
+  display:flex;align-items:center;justify-content:center;
+}
+.connect-center .icon-wrap svg{width:28px;height:28px;color:var(--primary)}
+.connect-center p{color:var(--muted-foreground);font-size:13px;margin:6px 0;line-height:1.5}
+.connect-center .btn{max-width:260px;margin:16px auto 0;display:block;flex:none}
+
+/* Done screen */
+.done-center{text-align:center;padding:20px 0}
+.done-check{
+  width:56px;height:56px;margin:0 auto 16px;
+  border-radius:50%;
+  background:oklch(0.59 0.18 149 / 15%);
+  display:flex;align-items:center;justify-content:center;
+  animation:scaleIn .5s ease;
+}
+.done-check svg{width:28px;height:28px;color:var(--success)}
+@keyframes scaleIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.done-center .callout{
+  margin-top:16px;padding:12px;
+  border-radius:var(--radius);
+  background:oklch(1 0 0 / 5%);border:1px solid var(--border);
+  font-size:12px;color:var(--muted-foreground);text-align:left;line-height:1.5;
+}
+
+/* PIN input */
+.pin-input{
+  display:flex;gap:8px;justify-content:center;margin:20px 0;
+}
+.pin-input input{
+  width:48px;height:56px;text-align:center;
+  font-size:22px;font-weight:600;font-family:inherit;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:var(--input);color:var(--foreground);
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.pin-input input:focus{
+  border-color:var(--ring);
+  box-shadow:0 0 0 2px oklch(0.488 0.243 264.376 / 20%);
+}
+.pin-error{color:var(--destructive);font-size:12px;text-align:center;min-height:16px;margin-bottom:4px}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  padding:10px 20px;border-radius:var(--radius);
+  font-size:13px;font-family:inherit;color:#fff;
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:99;
+}
+.toast.show{opacity:1}
+.toast.ok{background:var(--success)}
+.toast.err{background:var(--destructive)}
+
+/* Responsive */
+@media(max-width:460px){
+  body{padding:0;align-items:stretch}
+  .wizard-card{max-width:none;border-radius:0;min-height:100svh;box-shadow:none;border:none}
+  .card-inner{padding:1.5rem 1.25rem}
+}
+/* Loading spinner for save buttons */
+@keyframes spin { to { transform: rotate(360deg) } }
+.btn.loading {
+  pointer-events:none;
+  opacity:0.7;
+  position:relative;
+  color:transparent !important;
+}
+.btn.loading::after {
+  content:'';
+  position:absolute;
+  width:18px;height:18px;
+  top:50%;left:50%;
+  margin:-9px 0 0 -9px;
+  border:2.5px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin 0.6s linear infinite;
+}
+</style>
+</head>
+<body>
+<div class="wizard-card">
+  <div class="card-inner">
+
+    <!-- Branding -->
+    <div class="brand">
+      <div class="brand-icon">Q</div>
+      <div>
+        <h1>QManager Setup</h1>
+        <div class="sub">BLE Configuration Wizard</div>
+      </div>
+    </div>
+
+    <!-- Connection bar -->
+    <div class="conn-bar" id="connBar">
+      <div class="conn-dot off" id="connDot"></div>
+      <span id="connText">Not connected</span>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="progress-dots" id="progressDots"></div>
+
+    <!-- Step 0: Connect -->
+    <div class="step-panel active" id="step-connect">
+      <div class="connect-center">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"/><path d="M21 12a9 9 0 0 0-9-9"/><path d="M18 12a6 6 0 0 0-6-6"/><path d="M15 12a3 3 0 0 0-3-3"/><path d="M12 12v.01"/></svg>
+        </div>
+        <h2>Connect to your modem</h2>
+        <p>Make sure Bluetooth is enabled and you're near the device.</p>
+        <button class="btn primary" onclick="doConnect()">Scan for QManager</button>
+      </div>
+    </div>
+
+    <!-- Step 1: PIN -->
+    <div class="step-panel" id="step-pin">
+      <h2>Secure your setup</h2>
+      <div class="desc">Enter the 4-digit PIN printed on the modem label to unlock configuration.</div>
+      <div class="pin-input">
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="pin0" autocomplete="off">
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="pin1" autocomplete="off">
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="pin2" autocomplete="off">
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" id="pin3" autocomplete="off">
+      </div>
+      <div class="pin-error" id="pinError"></div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="doDisconnect()">Cancel</button>
+        <button class="btn primary" onclick="submitPin()">Unlock</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Status -->
+    <div class="step-panel" id="step-status">
+      <h2>Modem Status</h2>
+      <div class="desc">Live stats from your modem.</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div id="st-connbadge" style="display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 8px;font-size:13px;font-weight:600">
+          <span id="st-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted-foreground)"></span>
+          <span id="st-connlabel">--</span>
+        </div>
+        <span id="st-carrier" style="color:var(--muted-foreground);font-size:13px">--</span>
+      </div>
+      <div class="status-grid" id="statusGrid">
+        <div class="stat"><div class="label">Band</div><div class="value" id="st-band">--</div></div>
+        <div class="stat"><div class="label">Bandwidth</div><div class="value" id="st-bw">--</div></div>
+        <div class="stat"><div class="label">RSRP</div><div class="value" id="st-rsrp">--</div></div>
+        <div class="stat"><div class="label">RSRQ</div><div class="value" id="st-rsrq">--</div></div>
+        <div class="stat"><div class="label">SINR</div><div class="value" id="st-sinr">--</div></div>
+        <div class="stat"><div class="label">Latency</div><div class="value" id="st-ping">--</div></div>
+        <div class="stat"><div class="label">IP Address</div><div class="value" id="st-ip">--</div></div>
+        <div class="stat"><div class="label">Uptime</div><div class="value" id="st-up">--</div></div>
+        <div class="stat"><div class="label">Temp</div><div class="value" id="st-temp">--</div></div>
+        <div class="stat"><div class="label">DL / UL</div><div class="value" id="st-tput">--</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn secondary" onclick="readStatus()">Refresh</button>
+        <button class="btn primary" onclick="goStep(3)">Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 3: APN -->
+    <div class="step-panel" id="step-apn">
+      <h2>APN Setting</h2>
+      <div class="desc">Set the Access Point Name for your mobile data connection.</div>
+      <div class="field">
+        <label>APN Name</label>
+        <input type="text" id="inp-apn" placeholder="e.g. fast.t-mobile.com">
+        <div class="current" id="cur-apn"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="goStep(2)">Back</button>
+        <button class="btn secondary" onclick="goStep(4)">Skip</button>
+        <button class="btn primary" onclick="writeAndNext('apn',4)">Save & Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 4: IMEI -->
+    <div class="step-panel" id="step-imei">
+      <h2>IMEI</h2>
+      <div class="desc">Device identity number. Only change this if you know what you're doing.</div>
+      <div class="field">
+        <label>IMEI (15 digits)</label>
+        <input type="text" id="inp-imei" maxlength="15" pattern="[0-9]{15}" inputmode="numeric" placeholder="Enter 15-digit IMEI">
+        <div class="current" id="cur-imei"></div>
+        <div class="hint">Leave empty to keep current value</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="goStep(3)">Back</button>
+        <button class="btn secondary" onclick="goStep(5)">Skip</button>
+        <button class="btn primary" onclick="writeAndNext('imei',5)">Save & Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 5: TTL -->
+    <div class="step-panel" id="step-ttl">
+      <h2>TTL Override</h2>
+      <div class="desc">Override outbound packet TTL value. Set to 0 to disable.</div>
+      <div class="option-cards" id="ttl-cards">
+        <div class="option-card" data-val="0" onclick="selectCard(this,'ttl')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">Disabled</div><div class="opt-desc">No TTL override</div></div>
+        </div>
+        <div class="option-card" data-val="64" onclick="selectCard(this,'ttl')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">64</div><div class="opt-desc">Linux default</div></div>
+        </div>
+        <div class="option-card" data-val="65" onclick="selectCard(this,'ttl')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">65</div><div class="opt-desc">Common bypass value</div></div>
+        </div>
+        <div class="option-card" data-val="128" onclick="selectCard(this,'ttl')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">128</div><div class="opt-desc">Windows default</div></div>
+        </div>
+      </div>
+      <div class="current" id="cur-ttl" style="margin-bottom:4px"></div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="goStep(4)">Back</button>
+        <button class="btn secondary" onclick="goStep(6)">Skip</button>
+        <button class="btn primary" onclick="writeCardAndNext('ttl',6)">Save & Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Network Mode -->
+    <div class="step-panel" id="step-netmode">
+      <h2>Network Mode</h2>
+      <div class="desc">Choose your preferred radio access technology.</div>
+      <div class="option-cards" id="netmode-cards">
+        <div class="option-card" data-val="AUTO" onclick="selectCard(this,'netmode')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">Automatic</div><div class="opt-desc">Let the modem choose the best network</div></div>
+        </div>
+        <div class="option-card" data-val="NR5G" onclick="selectCard(this,'netmode')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">5G Only</div><div class="opt-desc">Connect exclusively to 5G NR</div></div>
+        </div>
+        <div class="option-card" data-val="NR5G:LTE" onclick="selectCard(this,'netmode')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">5G + LTE</div><div class="opt-desc">Prefer 5G with LTE fallback</div></div>
+        </div>
+        <div class="option-card" data-val="LTE" onclick="selectCard(this,'netmode')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">LTE Only</div><div class="opt-desc">Connect exclusively to 4G LTE</div></div>
+        </div>
+      </div>
+      <div class="current" id="cur-netmode" style="margin-bottom:4px"></div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="goStep(5)">Back</button>
+        <button class="btn secondary" onclick="goStep(7)">Skip</button>
+        <button class="btn primary" onclick="writeCardAndNext('netmode',7)">Save & Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 7: 5G Architecture -->
+    <div class="step-panel" id="step-nr5g">
+      <h2>5G Architecture</h2>
+      <div class="desc">Select between Non-Standalone (NSA) and Standalone (SA) 5G modes.</div>
+      <div class="option-cards" id="nr5g-cards">
+        <div class="option-card" data-val="0" onclick="selectCard(this,'nr5g')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">Automatic</div><div class="opt-desc">Let the modem decide</div></div>
+        </div>
+        <div class="option-card" data-val="1" onclick="selectCard(this,'nr5g')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">NSA Only</div><div class="opt-desc">Non-Standalone (anchored to LTE)</div></div>
+        </div>
+        <div class="option-card" data-val="2" onclick="selectCard(this,'nr5g')">
+          <div class="radio"></div>
+          <div class="opt-text"><div class="opt-label">SA Only</div><div class="opt-desc">Standalone 5G core network</div></div>
+        </div>
+      </div>
+      <div class="current" id="cur-nr5g" style="margin-bottom:4px"></div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="goStep(6)">Back</button>
+        <button class="btn primary" onclick="writeCardAndNext('nr5g',8)">Save & Finish</button>
+      </div>
+    </div>
+
+    <!-- Step 8: Done -->
+    <div class="step-panel" id="step-done">
+      <div class="done-center">
+        <div class="done-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h2>You're all set!</h2>
+        <p style="color:var(--muted-foreground);font-size:13px;margin:8px 0">Your modem has been configured successfully via BLE.</p>
+        <div class="callout">
+          Settings take effect immediately. You'll return to the status page shortly.
+        </div>
+        <div class="btn-row" style="justify-content:center;margin-top:20px">
+          <button class="btn secondary" onclick="goToDashboard()" style="max-width:200px">Go to Dashboard</button>
+          <button class="btn primary" onclick="goStep(2)" style="max-width:200px">View Status</button>
+        </div>
+        <div style="color:var(--muted-foreground);font-size:12px;margin-top:12px" id="redirectMsg"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- BLE UUIDs ---
+const SVC  = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+const UUIDS = {
+  pin:     'a1b2c3d4-e5f6-7890-abcd-ef1234567899',
+  apn:     'a1b2c3d4-e5f6-7890-abcd-ef1234567891',
+  imei:    'a1b2c3d4-e5f6-7890-abcd-ef1234567892',
+  ttl:     'a1b2c3d4-e5f6-7890-abcd-ef1234567893',
+  netmode: 'a1b2c3d4-e5f6-7890-abcd-ef1234567894',
+  nr5g:    'a1b2c3d4-e5f6-7890-abcd-ef1234567895',
+  status:  'a1b2c3d4-e5f6-7890-abcd-ef1234567896',
+  result:  'a1b2c3d4-e5f6-7890-abcd-ef1234567898',
+};
+
+const STEP_IDS = ['connect','pin','status','apn','imei','ttl','netmode','nr5g','done'];
+const TOTAL = STEP_IDS.length;
+let device=null, server=null, service=null, chars={};
+let currentStep=0;
+const selectedCards = { ttl:'0', netmode:'AUTO', nr5g:'0' };
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+// --- Helpers ---
+function $(id){ return document.getElementById(id) }
+
+function toast(msg, ok=true){
+  const t=$('toast');
+  t.textContent=msg;
+  t.className='toast show '+(ok?'ok':'err');
+  setTimeout(()=>t.className='toast',2500);
+}
+
+function setConn(text, state){
+  $('connText').textContent=text;
+  $('connDot').className='conn-dot '+state;
+}
+
+// Dots only for wizard config steps (apn=3 through done=8)
+const DOT_START=3, DOT_END=8, DOT_COUNT=DOT_END-DOT_START+1;
+function buildDots(){
+  const d=$('progressDots');
+  d.innerHTML='';
+  if(currentStep<DOT_START||currentStep>DOT_END){d.style.display='none';return;}
+  d.style.display='flex';
+  for(let i=0;i<DOT_COUNT;i++){
+    const stepIdx=DOT_START+i;
+    const dot=document.createElement('div');
+    dot.className='dot'+(stepIdx<currentStep?' done':'')+(stepIdx===currentStep?' active':'');
+    d.appendChild(dot);
+  }
+}
+
+let statusTimer=null;
+function goStep(n){
+  currentStep=n;
+  STEP_IDS.forEach((id,i)=>{
+    $('step-'+id).className='step-panel'+(i===n?' active':'');
+  });
+  buildDots();
+  if(n>=2 && n<=7) readCurrentValues(n);
+  // Auto-refresh status every 4s while on status page
+  if(statusTimer){clearInterval(statusTimer);statusTimer=null;}
+  if(n===2){readStatus();statusTimer=setInterval(readStatus,4000);}
+  if(redirectTimer){clearInterval(redirectTimer);redirectTimer=null;}
+  if(n===8) startRedirect();
+}
+
+// --- PIN input auto-advance ---
+document.querySelectorAll('.pin-input input').forEach((inp,i,all)=>{
+  inp.addEventListener('input',()=>{
+    inp.value=inp.value.replace(/[^0-9]/g,'');
+    if(inp.value && i<3) all[i+1].focus();
+  });
+  inp.addEventListener('keydown',(e)=>{
+    if(e.key==='Backspace' && !inp.value && i>0) all[i-1].focus();
+  });
+});
+
+// --- Option card selection ---
+function selectCard(el, group){
+  const cards = el.parentElement.querySelectorAll('.option-card');
+  cards.forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCards[group] = el.dataset.val;
+}
+
+// --- BLE ---
+async function doConnect(){
+  if(!navigator.bluetooth){
+    toast('Web Bluetooth not supported. Use Chrome on Android.',false);return;
+  }
+  try{
+    setConn('Scanning...','wait');
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{namePrefix:'QManager'}],
+      optionalServices:[SVC]
+    });
+    device.addEventListener('gattserverdisconnected',()=>{
+      setConn('Disconnected','off');chars={};goStep(0);
+    });
+    setConn('Connecting...','wait');
+    server = await device.gatt.connect();
+    service = await server.getPrimaryService(SVC);
+    for(const[key,uuid] of Object.entries(UUIDS)){
+      try{ chars[key]=await service.getCharacteristic(uuid); }
+      catch(e){ console.warn(key,e); }
+    }
+    setConn('Connected: '+device.name,'on');
+    toast('Connected! Enter PIN to unlock.');
+    goStep(1);
+    $('pin0').focus();
+  }catch(e){
+    setConn('Connection failed','off');
+    toast(e.message||'Failed to connect',false);
+  }
+}
+
+function doDisconnect(){
+  if(device&&device.gatt.connected) device.gatt.disconnect();
+  setConn('Disconnected','off');
+  goStep(0);
+}
+
+async function bleRead(key){
+  if(!chars[key]) return '';
+  try{ const v=await chars[key].readValue(); return dec.decode(v); }
+  catch(e){ console.error('Read '+key,e); return ''; }
+}
+async function bleWrite(key,value){
+  if(!chars[key]) throw new Error(key+' not available');
+  await chars[key].writeValueWithResponse(enc.encode(value));
+}
+
+// --- PIN ---
+async function submitPin(){
+  const pin = $('pin0').value+$('pin1').value+$('pin2').value+$('pin3').value;
+  $('pinError').textContent='';
+  if(pin.length!==4){
+    $('pinError').textContent='Enter all 4 digits';return;
+  }
+  const btn=event.currentTarget;
+  btn.classList.add('loading');
+  try{
+    await bleWrite('pin',pin);
+    const res=await bleRead('result');
+    try{
+      const r=JSON.parse(res);
+      if(r.status==='ok'){toast('Unlocked!');goStep(2);readStatus();return;}
+    }catch(e){}
+    $('pinError').textContent='Wrong PIN. Try again.';
+    ['pin0','pin1','pin2','pin3'].forEach(id=>{$(id).value='';});
+    $('pin0').focus();
+  }catch(e){
+    $('pinError').textContent='Error: '+e.message;
+  }
+  finally{ btn.classList.remove('loading'); }
+}
+
+// --- Status ---
+function fmtBytes(bps){
+  bps=parseInt(bps)||0;
+  if(bps>1048576) return (bps/1048576).toFixed(1)+' MB/s';
+  if(bps>1024) return (bps/1024).toFixed(0)+' KB/s';
+  return bps+' B/s';
+}
+function colorVal(el,val,good,warn){
+  if(isNaN(val)) return;
+  el.style.color=val>good?'var(--success)':val>warn?'var(--warning)':'var(--destructive)';
+}
+async function readStatus(){
+  if(!chars.status) return;
+  try{
+    const raw=await bleRead('status');
+    const st=JSON.parse(raw);
+    // Connection badge
+    const isConn=st.g==='registered';
+    $('st-dot').style.background=isConn?'var(--success)':'var(--destructive)';
+    $('st-connlabel').textContent=(st.t||'--').replace('NR5G','5G');
+    $('st-carrier').textContent=st.c||'--';
+    // Grid fields
+    $('st-band').textContent=st.b||'--';
+    $('st-bw').textContent=st.w&&st.w!='0'?st.w+' MHz':'--';
+    const rsrp=parseInt(st.r);
+    $('st-rsrp').textContent=!isNaN(rsrp)?rsrp+' dBm':'--';
+    colorVal($('st-rsrp'),rsrp,-90,-110);
+    const rsrq=parseInt(st.q);
+    $('st-rsrq').textContent=!isNaN(rsrq)?rsrq+' dB':'--';
+    colorVal($('st-rsrq'),rsrq,-10,-15);
+    const sinr=parseInt(st.s);
+    $('st-sinr').textContent=!isNaN(sinr)?sinr+' dB':'--';
+    colorVal($('st-sinr'),sinr,10,0);
+    $('st-ping').textContent=st.p?st.p+' ms':'--';
+    $('st-ip').textContent=st.i||'--';
+    $('st-up').textContent=st.u||'--';
+    const temp=parseInt(st.d);
+    $('st-temp').textContent=!isNaN(temp)?temp+'°C':'--';
+    colorVal($('st-temp'),70-temp,0,-10);
+    $('st-tput').textContent=fmtBytes(st.rx)+' / '+fmtBytes(st.tx);
+  }catch(e){ console.error('Status',e); }
+}
+
+// --- Read current values ---
+async function readCurrentValues(step){
+  const map={
+    2:null, // status
+    3:{key:'apn',el:'cur-apn',inp:'inp-apn'},
+    4:{key:'imei',el:'cur-imei',inp:'inp-imei'},
+    5:{key:'ttl',el:'cur-ttl',cards:'ttl-cards',group:'ttl'},
+    6:{key:'netmode',el:'cur-netmode',cards:'netmode-cards',group:'netmode'},
+    7:{key:'nr5g',el:'cur-nr5g',cards:'nr5g-cards',group:'nr5g'},
+  };
+  const m=map[step];
+  if(!m) return;
+  try{
+    const val=await bleRead(m.key);
+    const labels={nr5g:{'0':'Automatic','1':'NSA Only','2':'SA Only'},
+                  netmode:{'NR5G':'5G Only','LTE':'LTE Only','AUTO':'Automatic','LTE:NR5G':'LTE + 5G','NR5G:LTE':'LTE + 5G'},
+                  ttl:{'0':'Off (Default)','64':'64','65':'65','128':'128'}};
+    const display=(labels[m.key]&&labels[m.key][val])||val||'not set';
+    $(m.el).textContent='Current: '+display;
+    if(m.cards){
+      // Pre-select matching card
+      const cards=$(m.cards).querySelectorAll('.option-card');
+      cards.forEach(c=>{
+        c.classList.remove('selected');
+        if(c.dataset.val===val){ c.classList.add('selected'); selectedCards[m.group]=val; }
+      });
+    } else if(m.inp){
+      if(val) $(m.inp).value=val;
+    }
+  }catch(e){ console.warn(m.key,e); }
+}
+
+// --- Write text field and advance ---
+async function writeAndNext(key, nextStep){
+  const inpMap={apn:'inp-apn',imei:'inp-imei'};
+  const val=$(inpMap[key]).value.trim();
+  if(!val){ goStep(nextStep); return; }
+  if(key==='imei' && (val.length!==15||!/^\d{15}$/.test(val))){
+    toast('IMEI must be exactly 15 digits',false); return;
+  }
+  const btn=event.currentTarget;
+  btn.classList.add('loading');
+  btn.dataset.origText=btn.textContent;
+  try{
+    await bleWrite(key,val);
+    toast(key.toUpperCase()+' saved');
+    goStep(nextStep);
+  }catch(e){ toast('Failed: '+e.message,false); }
+  finally{ btn.classList.remove('loading'); }
+}
+
+// --- Write card selection and advance ---
+async function writeCardAndNext(group, nextStep){
+  const val=selectedCards[group];
+  const btn=event.currentTarget;
+  btn.classList.add('loading');
+  try{
+    await bleWrite(group,val);
+    toast(group==='nr5g'?'5G mode':group.toUpperCase()+' saved');
+    goStep(nextStep);
+  }catch(e){ toast('Failed: '+e.message,false); }
+  finally{ btn.classList.remove('loading'); }
+}
+
+// --- Dashboard redirect ---
+let redirectTimer=null;
+function goToDashboard(){
+  if(device&&device.gatt.connected) device.gatt.disconnect();
+  window.location.href='http://192.168.1.1';
+}
+function startRedirect(){
+  let sec=10;
+  $('redirectMsg').textContent='Returning to status in '+sec+'s...';
+  redirectTimer=setInterval(()=>{
+    sec--;
+    if(sec<=0){clearInterval(redirectTimer);redirectTimer=null;goStep(2);return;}
+    $('redirectMsg').textContent='Returning to status in '+sec+'s...';
+  },1000);
+}
+
+// --- Init ---
+buildDots();
+if(!navigator.bluetooth){
+  setConn('Web Bluetooth not supported','off');
+}
+</script>
+</body>
+</html>
